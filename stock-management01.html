@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stock Management</title>
+<style>
+:root{--ink:#0f1b2d;--mut:#6b7788;--line:#e3e8ee;--bg:#f1f4f8;--pan:#fff;--acc:#0e7c86;--accd:#0a626a;--in:#1a8a5f;--out:#c2432f;--warn:#b7791f;--r:14px}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Noto Sans Bengali','Hind Siliguri','Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--ink);font-size:14.5px;font-weight:500;line-height:1.5;min-height:100vh}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+header{position:sticky;top:0;z-index:20;background:rgba(255,255,255,.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;padding:12px 24px}
+#brandBtn{background:none;border:0;cursor:pointer;display:flex;align-items:center;gap:10px;font-weight:700;font-size:16px}
+.mk{width:34px;height:34px;border-radius:10px;background:var(--ink);color:#fff;display:grid;place-items:center;font-size:15px}
+#dashDate{color:var(--mut);font-size:13px}
+main{max-width:1100px;margin:0 auto;padding:24px 20px 120px}
+.tab{display:none}.tab.on{display:block}
+.card{background:var(--pan);border:1px solid var(--line);border-radius:var(--r);padding:20px;margin-bottom:18px;box-shadow:0 1px 2px rgba(15,27,45,.04)}
+.card h3{font-size:16px;font-weight:800;margin-bottom:16px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;margin-bottom:18px}
+.kpi{background:var(--pan);border:1px solid var(--line);border-radius:var(--r);padding:22px 20px}
+.kpi span{color:var(--ink);opacity:.75;font-size:16px;font-weight:700}
+.kpi b{display:block;font-size:46px;font-weight:800;line-height:1.15;margin-top:6px;font-variant-numeric:tabular-nums}
+.kpi.in b{color:var(--in)}.kpi.out b{color:var(--out)}
+.kpi.st{background:var(--ink);border-color:var(--ink);color:#fff}.kpi.st span{color:#c3d0e0;opacity:1}.kpi.st b{font-size:56px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;align-items:end}
+.two{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:18px}
+label.f{display:flex;flex-direction:column;gap:5px;font-size:13.5px;color:#4a5667;font-weight:700}
+input,select,textarea{padding:10px 12px;border:1px solid #d3dae3;border-radius:10px;background:#fff;width:100%;font-weight:500;color:var(--ink)}
+input:focus,select:focus{border-color:var(--acc);box-shadow:0 0 0 3px rgba(14,124,134,.14);outline:0}
+.btn{padding:10px 18px;border-radius:10px;border:1px solid transparent;cursor:pointer;font-weight:600;white-space:nowrap;transition:background .15s}
+.btn.p{background:var(--acc);color:#fff}.btn.p:hover{background:var(--accd)}
+.btn.s{background:#fff;border-color:#d3dae3}.btn.s:hover{background:#f4f6f9}
+.btn.d{background:none;border-color:transparent;color:var(--out);padding:4px 10px;font-size:13px}.btn.d:hover{background:#fbe9e5}
+.bar{display:flex;flex-wrap:wrap;gap:10px;align-items:end;margin-bottom:14px}
+.bar>*{flex:1 1 150px;max-width:220px}.bar .btn{flex:0 0 auto}
+.tw{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+th,td{font-weight:500;padding:12px;text-align:left;border-bottom:1px solid #edf0f4;white-space:nowrap}
+td.w{white-space:normal;min-width:140px}
+th{color:#4a5667;font-size:13.5px;font-weight:700 !important;border-bottom:1px solid var(--line)}
+tbody tr:last-child td{border:0}tbody tr:hover{background:#f8fafc}
+td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
+.tag{display:inline-block;padding:2px 10px;border-radius:20px;font-size:13px;font-weight:700;background:#eef1f5;color:#4a5667}
+.tag.in{background:#e0f4ea;color:var(--in)}.tag.out{background:#fbe6e1;color:var(--out)}.tag.warn{background:#fcefd3;color:var(--warn)}
+.sub{color:#5a6678;font-size:13px;font-weight:500}
+.empty{color:var(--mut);text-align:center;padding:28px 10px}
+.row{display:flex;justify-content:space-between;gap:10px;padding:11px 0;border-bottom:1px solid #edf0f4;align-items:center}
+.row:last-child{border:0}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.chip{display:inline-flex;gap:6px;align-items:center;padding:5px 6px 5px 14px;border:1px solid var(--line);border-radius:20px;background:#f6f8fb}
+.chip button{border:0;background:none;color:var(--out);cursor:pointer;font-size:17px;line-height:1;padding:0 6px}
+.sum{margin-top:12px;padding:12px 14px;background:#f6f8fb;border-radius:10px}
+.notice{background:#fcefd3;color:#7a5410;padding:10px 14px;border-radius:10px;margin-bottom:16px;display:none}
+nav{position:fixed;left:50%;bottom:14px;transform:translateX(-50%);width:calc(100% - 24px);max-width:720px;background:#fff;border:1px solid var(--line);border-radius:20px;box-shadow:0 10px 30px rgba(15,27,45,.14);display:flex;padding:6px;z-index:30}
+nav button{flex:1;background:none;border:0;border-radius:14px;padding:8px 2px;cursor:pointer;color:var(--mut);display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11.5px;font-weight:600}
+nav button svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+nav button:hover{color:var(--ink)}
+nav button.on{color:var(--acc);background:#e6f3f4}
+.ov{position:fixed;inset:0;background:rgba(15,27,45,.5);display:none;align-items:center;justify-content:center;padding:20px;z-index:50}
+.ov.on{display:flex}
+.dlg{background:#fff;border-radius:16px;padding:22px;width:100%;max-width:400px;box-shadow:0 20px 50px rgba(0,0,0,.3)}
+.dlg h3{margin-bottom:8px}.dlg p{margin-bottom:14px;color:var(--mut)}
+.acts{display:flex;gap:10px;justify-content:flex-end;margin-top:6px}
+#toast{position:fixed;top:70px;left:50%;background:var(--ink);color:#fff;padding:11px 20px;border-radius:30px;font-weight:600;opacity:0;transform:translate(-50%,-10px);transition:.25s;z-index:99;pointer-events:none}
+#toast.on{opacity:1;transform:translate(-50%,0)}#toast.err{background:var(--out)}
+@media(max-width:600px){header{padding:10px 14px}main{padding:16px 12px 110px}nav button{font-size:10.5px}#dashDate{display:none}}
+.btn.sm{padding:5px 12px;font-size:13px}
+.pl{display:flex;flex-direction:column}
+.pr{border-bottom:1px solid #edf0f4}.pr:last-child{border-bottom:0}
+.ph{display:flex;align-items:center;gap:12px;padding:11px 2px}
+.pn{flex:1;min-width:0;display:flex;align-items:center;justify-content:space-between;gap:10px;cursor:pointer}
+.pn .nx{flex:1;font-weight:600;font-size:15.5px;line-height:1.4;overflow-wrap:anywhere;word-break:break-word}
+.pn .sk{font-weight:800;font-size:19px;color:var(--in);white-space:nowrap}.pn .sk.low{color:var(--out)}.pn .sk small{font-size:12px;font-weight:600;color:var(--mut);margin-left:3px}
+.pn .cv{color:var(--mut);font-size:12px;transition:transform .15s}.pr.open .cv{transform:rotate(180deg)}
+.pd{display:none;padding:0 2px 14px 36px}.pr.open .pd{display:block}
+.pd .mt{font-size:13.5px;color:var(--mut);display:flex;gap:6px 12px;flex-wrap:wrap;align-items:center}
+.pd .ac{display:flex;gap:8px;justify-content:flex-end;margin-top:10px}
+.psel{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:0 0 12px;flex-wrap:wrap}.psel label{display:flex;gap:8px;align-items:center;font-weight:700;cursor:pointer}.ph>input[type=checkbox],.psel input[type=checkbox]{width:22px;height:22px;min-width:0;padding:0;margin:2px 0 0;accent-color:var(--acc);cursor:pointer}
+#sg{position:fixed;z-index:60;background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:0 10px 30px rgba(15,27,45,.18);max-height:220px;overflow:auto;display:none}
+#sg button{display:flex;justify-content:space-between;align-items:center;gap:12px;width:100%;text-align:left;padding:11px 14px;border:0;border-bottom:1px solid #edf0f4;background:none;font:inherit;cursor:pointer}
+#sg button:last-child{border-bottom:0}#sg button:hover{background:#f4f8fa}#sg small{color:var(--in);font-weight:700;white-space:nowrap}#sg small.z{color:var(--out)}
+.psum{color:var(--mut);font-size:14px;margin:0 0 12px}.psum b{color:var(--ink)}
+.bt td{padding:6px 8px}.bt td:first-child{width:34px;color:var(--mut)}.bt input{min-width:130px}.bt select{min-width:180px}.bt th{padding:8px}
+input[type=checkbox]{width:18px;height:18px;padding:0;accent-color:var(--acc);cursor:pointer;vertical-align:middle}
+th.ck,td.ck{width:38px;padding-right:0}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.tag.lnk{border:0;cursor:pointer;font-family:inherit}.tag.lnk:hover{background:#d9e0e8}
+.hd{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+#fF{display:grid;gap:12px;margin-top:12px}
+#pa{display:none}
+#pa h1{font-size:20px}#pa h2{font-size:16px;margin:2px 0 4px}#pa h3{font-size:14px;margin:16px 0 6px}#pa p{margin:4px 0}
+#pa table{margin-top:10px}#pa th,#pa td{border:1px solid #888;white-space:normal;padding:6px 8px;font-size:12px;color:#000}#pa th{background:#eee}
+@media print{body>*:not(#pa){display:none!important}#pa{display:block!important}body{background:#fff}}
+@media(max-width:600px){.kpi b{font-size:38px}.kpi.st b{font-size:46px}.kpi span{font-size:14.5px}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<header><button id="brandBtn" title="নাম বদলান"><span class="mk" id="mk"></span><span id="coName"></span></button><div style="display:flex;gap:10px;align-items:center"><span id="dashDate"></span><button class="btn s sm" id="setBtn">⚙ সেটিংস</button></div></header>
+<main>
+<div class="notice" id="memNote">ডেটা সেভ হচ্ছে না — নিয়মিত ব্যাকআপ নিন।</div>
+
+<section id="dashboard" class="tab on">
+  <div class="card" id="dupBar" style="display:none;border-color:#f0d9a8;background:#fffaf0"><p style="margin:0 0 10px"><b id="dupTxt"></b></p><button class="btn p sm" id="dupBtn">এখনই একত্র করুন</button></div>
+  <div class="kpis">
+    <div class="kpi st"><span>বর্তমান স্টক</span><b id="kS">0</b></div>
+    <div class="kpi"><span>মোট প্রোডাক্ট</span><b id="kP">0</b></div>
+    <div class="kpi"><span>মোট কাস্টমার</span><b id="kC">0</b></div>
+    <div class="kpi out"><span>মোট ব্যবহৃত</span><b id="kO">0</b></div>
+  </div>
+  <div class="two">
+    <div class="card"><h3>কম স্টক সতর্কতা</h3><div id="lowList"></div></div>
+    <div class="card"><h3>সাম্প্রতিক ব্যবহার</h3><div id="recent"></div></div>
+  </div>
+</section>
+
+<section id="products" class="tab">
+  <div class="card"><h3>নতুন প্রোডাক্ট (একসাথে অনেকগুলো যোগ করুন)</h3>
+    <form id="pForm">
+      <div class="grid" style="margin-bottom:14px;max-width:600px"><label class="f">কোন কোম্পানি থেকে আনা *<select id="pSup" required></select></label><label class="f">আনার তারিখ *<input type="date" id="pDate" required></label></div>
+      <div class="tw"><table class="bt"><thead><tr><th>#</th><th>প্রোডাক্টের নাম *</th><th class="n">পরিমাণ (পিস) *</th><th></th></tr></thead><tbody id="pRows"></tbody></table></div>
+      <div class="hd" style="margin:14px 0 0"><button type="button" class="btn s" id="pAddRow">+ আরেকটি সারি</button><button class="btn p">সব প্রোডাক্ট সেভ করুন</button></div>
+    </form>
+  </div>
+  <div class="card">
+    <div class="bar"><input id="pSearch" placeholder="🔍 নাম বা কোম্পানি খুঁজুন"><button class="btn s" id="pPdf">PDF</button><button class="btn s" id="pMerge" style="display:none">একই নামের একত্র করুন</button></div>
+    <p class="psum" id="pSum"></p>
+    <div class="psel" id="pSelBar"></div>
+    <div class="pl" id="pBody"></div>
+  </div>
+</section>
+
+<section id="suppliers" class="tab">
+  <div id="sList">
+    <div class="card"><h3>নতুন সাপ্লাই কোম্পানি</h3>
+      <form id="sForm" class="grid">
+        <label class="f">কোম্পানির নাম *<input id="sName" required></label>
+        <button class="btn p">সাপ্লাই যোগ করুন</button>
+      </form>
+    </div>
+    <div class="card">
+      <div class="bar"><input id="sSearch" placeholder="🔍 কোম্পানির নাম খুঁজুন"><button class="btn s" id="sPdfAll">সব PDF</button></div>
+      <div class="tw"><table><thead><tr><th>কোম্পানি</th><th class="n">প্রোডাক্ট</th><th class="n">মোট আনা</th><th class="n">বর্তমান স্টক</th></tr></thead><tbody id="sBody"></tbody></table></div>
+    </div>
+  </div>
+  <div id="sView"></div>
+</section>
+
+<section id="usage" class="tab">
+  <div class="card"><h3>নতুন ব্যবহার (একসাথে অনেকগুলো যোগ করুন)</h3>
+    <form id="uForm">
+      <div class="grid" style="margin-bottom:14px;max-width:600px">
+        <label class="f">কাস্টমার *<select id="uCust" required></select></label>
+        <label class="f">তারিখ *<input type="date" id="uDate" required></label>
+      </div>
+      <div class="tw"><table class="bt"><thead><tr><th>#</th><th>প্রোডাক্ট *</th><th class="n">পরিমাণ (পিস) *</th><th>নোট / কোন কাজে</th><th></th></tr></thead><tbody id="uRows"></tbody></table></div>
+      <div class="hd" style="margin:14px 0 0"><button type="button" class="btn s" id="uAddRow">+ আরেকটি সারি</button><button class="btn p">সব ব্যবহার সেভ করুন</button></div>
+    </form>
+  </div>
+  <div class="card"><h3>ব্যবহারের হিস্ট্রি</h3>
+    <div class="bar"><input type="date" id="uF1" aria-label="থেকে"><input type="date" id="uF2" aria-label="পর্যন্ত"><select id="uFC"></select><select id="uFP"></select><button class="btn s" id="uRst">রিসেট</button></div>
+    <div class="tw"><table><thead><tr><th>তারিখ</th><th>কাস্টমার</th><th>প্রোডাক্ট</th><th class="n">পরিমাণ</th><th>নোট</th><th></th></tr></thead><tbody id="uBody"></tbody></table></div>
+  </div>
+</section>
+
+<section id="customers" class="tab">
+  <div id="cList">
+    <div class="card"><h3>নতুন কাস্টমার</h3>
+      <form id="cForm" class="grid">
+        <label class="f">কাস্টমারের নাম *<input id="cName" required></label>
+        <label class="f">বাড়ির ঠিকানা *<input id="cAddr" required></label>
+        <button class="btn p">কাস্টমার যোগ করুন</button>
+      </form>
+    </div>
+    <div class="card">
+      <div class="bar"><input id="cSearch" placeholder="🔍 নাম বা ঠিকানা খুঁজুন"></div>
+      <div class="tw"><table><thead><tr><th>নাম</th><th>ঠিকানা</th><th class="n">মোট পিস</th><th></th></tr></thead><tbody id="cBody"></tbody></table></div>
+    </div>
+  </div>
+  <div id="cView"></div>
+</section>
+
+<section id="reports" class="tab">
+  <div class="card">
+    <div class="bar">
+      <label class="f">থেকে<input type="date" id="rF1"></label>
+      <label class="f">পর্যন্ত<input type="date" id="rF2"></label>
+      <label class="f">কাস্টমার<select id="rC"></select></label>
+      <label class="f">প্রোডাক্ট<select id="rP"></select></label>
+      <button class="btn p" id="rGo">রিপোর্ট দেখুন</button>
+      <button class="btn s" id="rPdf">PDF</button>
+      <button class="btn s" id="rCsv">CSV</button>
+    </div>
+    <div class="tw"><table><thead id="rHead"></thead><tbody id="rBody"><tr><td class="empty">ফিল্টার দিয়ে “রিপোর্ট দেখুন” চাপুন</td></tr></tbody></table></div>
+    <div class="sum" id="rSum"></div>
+  </div>
+  <div class="two">
+    <div class="card"><h3>কাস্টমার অনুযায়ী</h3><div class="tw"><table><thead><tr><th>কাস্টমার</th><th class="n">এন্ট্রি</th><th class="n">পরিমাণ</th></tr></thead><tbody id="sumC"></tbody></table></div></div>
+    <div class="card"><h3>প্রোডাক্ট অনুযায়ী</h3><div class="tw"><table><thead><tr><th>প্রোডাক্ট</th><th class="n">এন্ট্রি</th><th class="n">পরিমাণ</th></tr></thead><tbody id="sumP"></tbody></table></div></div>
+  </div>
+</section>
+
+<section id="bin" class="tab">
+  <div class="card">
+    <div class="hd"><h3 style="margin:0">রিসাইকেল বিন</h3><button class="btn s" id="binClr">বিন খালি করুন</button></div>
+    <div class="tw"><table><thead><tr><th>ধরন</th><th>বিবরণ</th><th>মোছার তারিখ</th><th></th></tr></thead><tbody id="binBody"></tbody></table></div>
+  </div>
+</section>
+
+<section id="settings" class="tab">
+  <div class="card"><h3>ব্যাকআপ</h3><p class="sub" style="margin:-8px 0 14px">সব ডেটা (প্রোডাক্ট, কাস্টমার, ব্যবহার, সাপ্লাই, বিন) একটি ফাইলে সেভ করে রাখুন। ফোন বা ব্রাউজার বদলালে রিস্টোর করে ফেরত পাবেন।</p><div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn p" id="bkBtn">⬇ ব্যাকআপ ডাউনলোড</button><button class="btn s" id="rsBtn">⬆ রিস্টোর</button><input type="file" id="rsFile" accept=".json" hidden></div><div class="sum" id="bkInfo"></div></div>
+  <div class="card"><h3>অটো ব্যাকআপ (Gmail)</h3><p class="sub" style="margin:-8px 0 14px">অ্যাপ খুললে (দিনে একবার) এবং ডেটা বদলালে নিজে নিজেই ব্যাকআপ ফাইল আপনার Gmail-এ চলে যাবে।</p>
+  <label style="display:flex;gap:8px;align-items:center;margin-bottom:12px;font-weight:700"><input type="checkbox" id="abOn" style="width:auto"> অটো ব্যাকআপ চালু</label>
+  <input type="url" id="abUrl" placeholder="Apps Script Web App লিংক (https://script.google.com/macros/s/.../exec)" style="width:100%;margin-bottom:12px">
+  <div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn p" id="abNow">📧 এখনই Gmail-এ পাঠান</button></div>
+  <div class="sum" id="abInfo"></div>
+  <details style="margin-top:14px"><summary style="cursor:pointer;font-weight:700">⚙ প্রথমবার সেটআপ (২ মিনিট)</summary>
+  <ol style="line-height:1.9;padding-left:20px;margin:10px 0">
+   <li>script.google.com এ যান (যে Gmail-এ ব্যাকআপ চান সেটা দিয়ে লগইন) → <b>New project</b></li>
+   <li>নিচের কোড কপি করে সব কোড মুছে পেস্ট করুন → Save</li>
+   <li><b>Deploy → New deployment → Web app</b>। Execute as: <b>Me</b>, Who has access: <b>Anyone</b> → Deploy → অনুমতি (Authorize) দিন</li>
+   <li>যে <b>Web app URL</b> পাবেন সেটা উপরের ঘরে বসান, চালু করুন, তারপর “এখনই পাঠান” চাপুন</li></ol>
+  <textarea id="abCode" readonly rows="9" style="width:100%;font-family:monospace;font-size:12px">function doPost(e){
+  var d=JSON.parse(e.postData.contents);
+  var to=Session.getEffectiveUser().getEmail();
+  var name='stock-backup-'+d.date+'.json';
+  MailApp.sendEmail({
+    to:to,
+    subject:'Stock Backup '+d.date+' - '+(d.company||''),
+    body:'Stock Management auto backup attached.',
+    attachments:[Utilities.newBlob(JSON.stringify(d.data,null,1),'application/json',name)]
+  });
+  return ContentService.createTextOutput('ok');
+}</textarea>
+  <button class="btn s" id="abCopy" style="margin-top:8px">📋 কোড কপি</button></details></div>
+  <div class="card"><h3>পাসওয়ার্ড</h3><p class="sub" style="margin:-8px 0 14px">এডিট বা মুছে ফেলার আগে এই পাসওয়ার্ড চাইবে। প্রথমবার পাসওয়ার্ড <b>1234</b> — নিজের মতো বদলে নিন।</p><button class="btn p" id="pwBtn">🔒 পাসওয়ার্ড পরিবর্তন</button></div>
+</section>
+</main>
+
+<nav id="nav"><button data-tab="dashboard" class="on"><svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></svg>হোম</button><button data-tab="products"><svg viewBox="0 0 24 24"><path d="M21 8l-9-5-9 5v8l9 5 9-5zM3 8l9 5 9-5M12 13v8"/></svg>প্রোডাক্ট</button><button data-tab="suppliers"><svg viewBox="0 0 24 24"><path d="M2 6h12v10H2zM14 10h4l4 3v3h-8"/><circle cx="7" cy="18" r="2"/><circle cx="17" cy="18" r="2"/></svg>সাপ্লাই</button><button data-tab="usage"><svg viewBox="0 0 24 24"><path d="M12 15V3m0 0L8 7m4-4l4 4M4 21h16"/></svg>ব্যবহার</button><button data-tab="customers"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>কাস্টমার</button><button data-tab="reports"><svg viewBox="0 0 24 24"><path d="M4 20V10m6 10V4m6 16v-7m4 7H2"/></svg>রিপোর্ট</button><button data-tab="bin"><svg viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 14h10l1-14"/></svg>বিন</button></nav>
+<div class="ov" id="ov"><div class="dlg"><h3 id="dT"></h3><p id="dM"></p><input id="dI" style="margin-bottom:14px"><div class="acts"><button class="btn s" id="dNo">বাতিল</button><button class="btn p" id="dYes">নিশ্চিত করুন</button></div></div></div>
+<div class="ov" id="fo"><div class="dlg"><h3 id="fT"></h3><form id="fF"></form></div></div>
+<div id="toast" role="status"></div>
+<div id="pa"></div>
+
+<script>
+const store=(()=>{let ok=true;const mem={};try{localStorage.setItem('__t','1');localStorage.removeItem('__t')}catch(e){ok=false}
+ return{ok,
+  get(k,d){try{if(ok){const v=localStorage.getItem(k);if(v===null)return d;try{return JSON.parse(v)}catch(e){return v}}}catch(e){}return k in mem?mem[k]:d},
+  set(k,v){mem[k]=v;if(ok)try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}}})();
+const arr=(k,d)=>{const v=store.get(k,d);return Array.isArray(v)?v:d};
+const DB={products:arr('gp_products',[]),usage:arr('gp_usage',[]),customers:arr('gp_customers',[]),bin:arr('gp_bin',[]),
+ suppliers:arr('gp_suppliers',['ASHA DESIGN MAKER']),company:String(store.get('gp_company_name','Gear Pro'))};
+const save=()=>{store.set('gp_products',DB.products);store.set('gp_usage',DB.usage);store.set('gp_customers',DB.customers);store.set('gp_bin',DB.bin);
+ store.set('gp_suppliers',DB.suppliers);store.set('gp_company_name',DB.company);abMark()};
+
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+const today=()=>{const d=new Date();return new Date(d-d.getTimezoneOffset()*6e4).toISOString().slice(0,10)};
+const sum=a=>a.reduce((x,y)=>x+y.qty,0);
+const plog=p=>{const g=(p.log||[]).map(x=>({d:x.d||'',q:+x.q||0,s:x.s===undefined?p.supplier:x.s,b:x.b}));if(!g.length)return[{d:p.date||'',q:p.qty,s:p.supplier}];const t=g.reduce((a,x)=>a+x.q,0);if(t<p.qty)g.push({d:guessDate(p),q:p.qty-t,s:p.supplier});return g};
+const guessDate=p=>{if(!p.batch)return'';const ds=[...new Set(DB.products.filter(x=>x!==p&&x.batch===p.batch&&!(x.log&&x.log.length)).map(x=>x.date).filter(Boolean))];return ds.length===1?ds[0]:''};
+const logCmp=(a,b)=>(a.d||'').localeCompare(b.d||'');
+const supsOf=p=>[...new Set(plog(p).map(x=>x.s).filter(Boolean))];
+const allocP=p=>{let u=usedOf(p.id);return plog(p).sort(logCmp).map(x=>{const t=Math.min(u,x.q);u-=t;return{...x,left:x.q-t}})};
+const sx=(p,n)=>{const es=allocP(p).filter(x=>x.s===n),ds=es.map(x=>x.d).filter(Boolean).sort();return{es,q:es.reduce((a,x)=>a+x.q,0),left:es.reduce((a,x)=>a+x.left,0),last:ds[ds.length-1]||''}};
+const skey=(p,n)=>{const es=plog(p).filter(x=>x.s===n).sort(logCmp),e=es[es.length-1]||{};return e.b||(supsOf(p).length<2?p.batch:'')||('d'+(e.d||''))};
+const pOf=id=>DB.products.find(p=>p.id===id),cOf=id=>DB.customers.find(c=>c.id===id);
+const pn=id=>pOf(id)?.name||'(মুছে ফেলা)',cn=id=>cOf(id)?.name||'(মুছে ফেলা)';
+const usedOf=id=>sum(DB.usage.filter(u=>u.productId===id));
+const stockOf=id=>(pOf(id)?.qty||0)-usedOf(id);
+const byDate=(a,b)=>b.date.localeCompare(a.date);
+const LOW=5;
+const empty=(n,t)=>`<tr><td colspan="${n}" class="empty">${t}</td></tr>`;
+const tbl=(h,rows)=>`<table><thead><tr>${h.map(x=>`<th>${x}</th>`).join('')}</tr></thead><tbody>${rows.map(r=>`<tr>${r.map(c=>`<td>${c}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
+let tt;function toast(m,err){const t=$('toast');t.textContent=m;t.className='on'+(err?' err':'');clearTimeout(tt);tt=setTimeout(()=>t.className='',2600)}
+function setOpts(sel,html){const v=sel.value;sel.innerHTML=html;if([...sel.options].some(o=>o.value===v))sel.value=v}
+
+// migrate older data (Stock In -> product qty, place -> customer)
+const OLDIN=arr('gp_stockin',[]);
+function fix(oi){DB.products.forEach(p=>{if(typeof p.qty!=='number')p.qty=sum((oi||[]).filter(s=>s.productId===p.id))});
+ DB.usage.forEach(u=>{if(!u.customerId){const n=u.place||'অজানা';let c=DB.customers.find(x=>x.name===n);if(!c){c={id:uid(),name:n,address:'-'};DB.customers.push(c)}u.customerId=c.id;if(!u.note)u.note=u.purpose||'';delete u.place;delete u.purpose}})}
+
+function dialog({title,msg,input,yes='নিশ্চিত করুন'}){return new Promise(res=>{
+ $('dT').textContent=title;$('dM').textContent=msg||'';$('dM').style.display=msg?'':'none';
+ const i=$('dI');i.style.display=input!==undefined?'':'none';if(input!==undefined)i.value=input;
+ $('dYes').textContent=yes;$('ov').classList.add('on');(input!==undefined?i:$('dYes')).focus();
+ const done=v=>{$('ov').classList.remove('on');$('dYes').onclick=$('dNo').onclick=i.onkeydown=null;res(v)};
+ $('dYes').onclick=()=>done(input!==undefined?i.value.trim():true);$('dNo').onclick=()=>done(null);
+ i.onkeydown=e=>{if(e.key==='Enter')$('dYes').click();if(e.key==='Escape')$('dNo').click()}})}
+const ask=(title,msg,yes='মুছে ফেলুন')=>dialog({title,msg,yes});
+$('ov').addEventListener('click',e=>{if(e.target.id==='ov')$('dNo').click()});
+function formDlg(title,fields,v={}){return new Promise(res=>{const f=$('fF');$('fT').textContent=title;
+ f.innerHTML=fields.map(x=>`<label class="f">${x.l}${x.r?' *':''}${x.t==='select'?`<select name="${x.k}" ${x.r?'required':''}>${x.o}</select>`:x.t==='textarea'?`<textarea name="${x.k}" rows="4"></textarea>`:`<input name="${x.k}" type="${x.t||'text'}" ${x.r?'required':''} ${x.m!==undefined?`min="${x.m}"`:''}>`}</label>`).join('')+'<div class="acts"><button type="button" class="btn s" id="fNo">বাতিল</button><button class="btn p">সেভ করুন</button></div>';
+ fields.forEach(x=>f.elements[x.k].value=v[x.k]??'');
+ const done=r=>{$('fo').classList.remove('on');f.onsubmit=null;res(r)};
+ f.onsubmit=e=>{e.preventDefault();const o={};fields.forEach(x=>o[x.k]=f.elements[x.k].value.trim());done(o)};
+ $('fNo').onclick=()=>done(null);$('fo').classList.add('on');f.elements[fields[0].k].focus()})}
+
+// ---------- Print / PDF (browser "Save as PDF") ----------
+function printDoc(title,html,fn,dt){if(dt===undefined)dt=today();const t=document.title;$('pa').innerHTML=`<h1>${esc(DB.company)}</h1><h2>${title}</h2>${dt?`<div class="sub">তারিখ: ${dt}</div>`:''}${html}`;document.title=fn;setTimeout(()=>{window.print();document.title=t},60)}
+
+// ---------- Company name & navigation ----------
+function applyCo(){$('coName').textContent=DB.company;document.title=DB.company+' – Stock Management';$('mk').textContent=[...DB.company][0]||'S'}
+$('brandBtn').onclick=async()=>{const v=await dialog({title:'কোম্পানির নাম পরিবর্তন',input:DB.company,yes:'সেভ করুন'});
+ if(v===null)return;if(!v)return toast('নাম খালি রাখা যাবে না',1);DB.company=v;save();applyCo();toast('কোম্পানির নাম আপডেট হয়েছে')};
+function go(tab){document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('on',b.dataset.tab===tab));
+ document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',t.id===tab));scrollTo(0,0)}
+$('nav').addEventListener('click',e=>{const b=e.target.closest('button');if(b){if(b.dataset.tab==='customers')cv=null;if(b.dataset.tab==='suppliers')sv=null;go(b.dataset.tab);renderAll()}});
+$('setBtn').onclick=()=>go('settings');
+
+// ---------- Option lists & forms ----------
+const optS=()=>DB.suppliers.map(x=>`<option>${esc(x)}</option>`).join('');
+const optP=()=>DB.products.map(p=>`<option value="${p.id}">${esc(p.name)} — স্টক ${stockOf(p.id)}</option>`).join('');
+const optC=()=>DB.customers.map(c=>`<option value="${c.id}">${esc(c.name)} — ${esc(c.address)}</option>`).join('');
+const CF=[{k:'name',l:'কাস্টমারের নাম',r:1},{k:'address',l:'বাড়ির ঠিকানা',r:1}];
+const PF=()=>[{k:'name',l:'নাম',r:1},{k:'supplier',l:'সাপ্লায়ার কোম্পানি',r:1,t:'select',o:optS()},{k:'date',l:'আনার তারিখ',t:'date'},{k:'qty',l:'মোট পরিমাণ (পিস)',r:1,t:'number',m:0}];
+const UF=()=>[{k:'customerId',l:'কাস্টমার',r:1,t:'select',o:optC()},{k:'productId',l:'প্রোডাক্ট',r:1,t:'select',o:optP()},{k:'date',l:'তারিখ',r:1,t:'date'},{k:'qty',l:'পরিমাণ (পিস)',r:1,t:'number',m:1},{k:'note',l:'নোট / কোন কাজে'}];
+function toBin(type,data,rel,lbl){DB.bin.unshift({id:uid(),type,data,rel:rel||[],lbl,at:today()})}
+function prodErr(o,id){o.qty=Math.max(0,parseInt(o.qty)||0);
+ if(!o.name||!o.supplier)return'সব আবশ্যক ঘর পূরণ করুন';
+ if(id&&o.qty<usedOf(id))return`ইতিমধ্যে ${usedOf(id)} পিস ব্যবহার হয়েছে, এর কম দেওয়া যাবে না`}
+function useErr(o,id){o.qty=parseInt(o.qty);if(!o.customerId)return'কাস্টমার নির্বাচন করুন';if(!o.productId)return'প্রোডাক্ট নির্বাচন করুন';if(!o.qty||o.qty<=0)return'সঠিক পরিমাণ দিন';
+ const old=id&&DB.usage.find(x=>x.id===id),av=stockOf(o.productId)+(old&&old.productId===o.productId?old.qty:0);if(o.qty>av)return`স্টকে মাত্র ${av} পিস আছে`}
+function addCust(o){if(!o.name||!o.address){toast('নাম ও ঠিকানা দিন',1);return null}const c={id:uid(),name:o.name,address:o.address};DB.customers.push(c);save();renderAll();toast('কাস্টমার যোগ হয়েছে');return c}
+
+// ---------- Products ----------
+const nkey=n=>String(n||'').trim().replace(/\s+/g,' ').toLowerCase();
+const pRowHtml='<tr><td></td><td><input class="bn" placeholder="প্রোডাক্টের নাম" autocomplete="off"></td><td><input class="bq" type="number" min="0" inputmode="numeric" placeholder="0"></td><td class="n"><button type="button" class="btn d" data-rm title="সারি মুছুন">✕</button></td></tr>';
+const numRows=()=>[...$('pRows').rows].forEach((r,k)=>r.cells[0].textContent=k+1);
+function addRows(n=1,focus){$('pRows').insertAdjacentHTML('beforeend',pRowHtml.repeat(n));numRows();if(focus)$('pRows').lastElementChild.querySelector('.bn').focus()}
+function resetRows(){$('pRows').innerHTML='';addRows(1)}
+// ---- নামের সাজেশন (প্রোডাক্ট ও ব্যবহার — দুই জায়গাতেই) ----
+const sg=document.createElement('div');sg.id='sg';document.body.appendChild(sg);let sgIn=null,sgT;
+function sgHide(){sg.style.display='none';sgIn=null}
+function sgShow(inp){const q=nkey(inp.value);let html='';
+ if(inp.classList.contains('us')){
+  const l=DB.products.filter(p=>!q||nkey(p.name).includes(q)).sort((a,b)=>(nkey(b.name).startsWith(q)-nkey(a.name).startsWith(q))||a.name.localeCompare(b.name)).slice(0,40);
+  if(!l.length)return sgHide();
+  html=l.map(p=>{const st=stockOf(p.id);return`<button type="button" data-id="${p.id}"><span>${esc(p.name)}</span><small class="${st<=0?'z':''}">স্টক ${st}</small></button>`}).join('')}
+ else{
+  if(!q)return sgHide();
+  const m=new Map();DB.products.forEach(p=>{const k=nkey(p.name),e=m.get(k)||{name:p.name.trim(),stk:0};e.stk+=stockOf(p.id);m.set(k,e)});
+  const l=[...m.entries()].filter(([k])=>k.includes(q)).sort((a,b)=>(b[0].startsWith(q)-a[0].startsWith(q))||a[0].localeCompare(b[0])).slice(0,8);
+  if(!l.length||(l.length===1&&l[0][1].name===inp.value.trim()))return sgHide();
+  html=l.map(([k,e])=>`<button type="button" data-n="${esc(e.name)}"><span>${esc(e.name)}</span><small>স্টক ${e.stk}</small></button>`).join('')}
+ sg.innerHTML=html;sg.style.display='block';sgIn=inp;sgPlace()}
+function sgPlace(){if(!sgIn||sg.style.display!=='block')return;const r=sgIn.getBoundingClientRect(),vh=Math.min(innerHeight,window.visualViewport?visualViewport.height:innerHeight),nv=$('nav').getBoundingClientRect().top,lim=Math.min(vh,nv)-8;
+ if(r.bottom<60||r.top>lim)return sgHide();
+ const w=Math.min(Math.max(r.width,260),innerWidth-16),below=lim-r.bottom-4,above=r.top-64;
+ sg.style.width=w+'px';sg.style.left=Math.max(8,Math.min(r.left,innerWidth-w-8))+'px';
+ if(below>=150||below>=above){sg.style.maxHeight=Math.max(110,Math.min(260,below))+'px';sg.style.top=(r.bottom+4)+'px'}
+ else{const mh=Math.max(110,Math.min(260,above));sg.style.maxHeight=mh+'px';sg.style.top=(r.top-4-Math.min(sg.scrollHeight,mh))+'px'}}
+const isSg=el=>el.classList&&(el.classList.contains('bn')||el.classList.contains('us'));
+for(const id of ['pRows','uRows']){const el=$(id);
+ el.addEventListener('input',e=>{if(!isSg(e.target))return;if(e.target.classList.contains('us'))e.target.closest('tr').querySelector('.up').value='';sgShow(e.target)});
+ el.addEventListener('focusin',e=>{clearTimeout(sgT);if(isSg(e.target))sgShow(e.target)});
+ el.addEventListener('click',e=>{clearTimeout(sgT);if(isSg(e.target))sgShow(e.target)});
+ el.addEventListener('focusout',()=>{sgT=setTimeout(sgHide,200)})}
+sg.addEventListener('mousedown',e=>e.preventDefault());
+sg.addEventListener('click',e=>{const b=e.target.closest('button');if(!b||!sgIn)return;const inp=sgIn,tr=inp.closest('tr');
+ if(inp.classList.contains('us')){const p=pOf(b.dataset.id);if(!p)return sgHide();tr.querySelector('.up').value=p.id;inp.value=p.name;sgHide();tr.querySelector('.uq').focus()}
+ else{inp.value=b.dataset.n;sgHide();tr.querySelector('.bq').focus()}});
+addEventListener('scroll',e=>{if(e.target!==sg)sgPlace()},true);addEventListener('resize',sgPlace);if(window.visualViewport)visualViewport.addEventListener('resize',sgPlace);
+$('pAddRow').onclick=()=>addRows(1,true);
+$('pRows').addEventListener('click',e=>{const b=e.target.closest('[data-rm]');if(!b)return;const tr=b.closest('tr');
+ if($('pRows').rows.length>1){tr.remove();numRows()}else tr.querySelectorAll('input').forEach(i=>i.value='')});
+$('pRows').addEventListener('keydown',e=>{if(e.key!=='Enter'||e.target.tagName!=='INPUT')return;e.preventDefault();
+ const all=[...$('pRows').querySelectorAll('input')],k=all.indexOf(e.target);
+ if(k<all.length-1)all[k+1].focus();else addRows(1,true)});
+$('pForm').addEventListener('submit',e=>{e.preventDefault();
+ const sup=$('pSup').value,date=$('pDate').value;if(!sup)return toast('আগে একটি কোম্পানি নির্বাচন করুন',1);if(!date)return toast('তারিখ দিন',1);
+ const items=[],bid=uid();
+ for(const [k,r] of [...$('pRows').rows].entries()){const n=r.querySelector('.bn').value.trim(),q=r.querySelector('.bq').value.trim();
+  if(!n&&!q)continue;
+  if(!n||q==='')return toast(`সারি ${k+1}: নাম ও পরিমাণ দুটোই দিন`,1);
+  items.push({id:uid(),batch:bid,name:n,supplier:sup,date,qty:Math.max(0,parseInt(q)||0)})}
+ if(!items.length)return toast('অন্তত একটি প্রোডাক্ট লিখুন',1);
+ let nw=0,mg=0;
+  for(const it of items){const ex=DB.products.find(p=>nkey(p.name)===nkey(it.name));
+   if(ex){ex.log=plog(ex);ex.qty+=it.qty;if((it.date||'')>(ex.date||''))ex.date=it.date;ex.log.push({d:it.date,q:it.qty,s:it.supplier,b:it.batch});mg++}
+   else{it.log=[{d:it.date,q:it.qty,s:it.supplier,b:it.batch}];DB.products.push(it);nw++}}
+  save();resetRows();renderAll();toast([nw?`${nw}টি নতুন প্রোডাক্ট যোগ হয়েছে`:'',mg?`${mg}টি আগের প্রোডাক্টের সাথে যুক্ত হয়েছে`:''].filter(Boolean).join(' · '))});
+$('pSearch').oninput=renderProducts;
+const pList=()=>{const q=$('pSearch').value.trim().toLowerCase();return DB.products.filter(p=>!q||[p.name,supsOf(p).join(' '),p.date||''].some(x=>x.toLowerCase().includes(q)))};
+function dupGroups(){const m={};DB.products.forEach(p=>{(m[nkey(p.name)]=m[nkey(p.name)]||[]).push(p)});return Object.values(m).filter(a=>a.length>1)}
+const selP=new Set(),openP=new Set();
+function renderProducts(){[...selP].forEach(k=>{if(!pOf(k))selP.delete(k)});const list=pList().sort((a,b)=>a.name.localeCompare(b.name,'bn'));
+ $('pSum').innerHTML=`মোট <b>${DB.products.length}</b>টি প্রোডাক্ট · মোট স্টক <b>${DB.products.reduce((a,p)=>a+stockOf(p.id),0)}</b> পিস`;
+ $('pMerge').style.display=dupGroups().length?'':'none';
+ $('pSelBar').style.display=list.length?'':'none';
+ $('pSelBar').innerHTML=`<label><input type="checkbox" data-pselall="1" ${list.length&&list.every(p=>selP.has(p.id))?'checked':''}> সব সিলেক্ট</label><button class="btn p sm" data-act="pPdfSel" ${selP.size?'':'disabled'}>নির্বাচিত PDF (${selP.size})</button>`;
+ $('pBody').innerHTML=list.length?list.map(p=>{const s=stockOf(p.id),u=usedOf(p.id);
+  return`<div class="pr${openP.has(p.id)?' open':''}"><div class="ph"><input type="checkbox" data-psel="${p.id}" ${selP.has(p.id)?'checked':''} aria-label="নির্বাচন করুন"><div class="pn" data-act="pTog" data-id="${p.id}"><span class="nx">${esc(p.name)}</span><span class="sk${s<=LOW?' low':''}">${s}<small>পিস</small></span><span class="cv">▼</span></div></div>
+  <div class="pd"><div class="mt">${supsOf(p).map(x=>`<button class="tag lnk" data-act="openS" data-id="${esc(x)}" title="এই কোম্পানির সব প্রোডাক্ট দেখুন">${esc(x)}</button>`).join('')}<span>${esc(p.date||'')}</span><span>মোট ${p.qty} · ব্যবহৃত ${u}</span></div>
+  <div class="ac"><button class="btn s sm" data-act="pdfP" data-id="${p.id}">PDF</button><button class="btn s sm" data-act="editP" data-id="${p.id}">এডিট</button><button class="btn d" data-act="delP" data-id="${p.id}">মুছুন</button></div></div></div>`}).join('')
+  :`<div class="empty">${DB.products.length?'কোনো মিল পাওয়া যায়নি':'কোনো প্রোডাক্ট নেই — উপরের ফর্ম থেকে যোগ করুন'}</div>`}
+async function mergeDups(){const g=dupGroups();if(!g.length)return toast('একই নামের কোনো প্রোডাক্ট নেই');
+ if(!await ask('একই নামের প্রোডাক্ট একত্র করবেন?',`${g.length}টি নামের ডুপ্লিকেট এক হবে, পরিমাণ যোগ হবে, ব্যবহারের হিসাব ঠিক থাকবে। শুরুতে নিজে নিজে একটি ব্যাকআপ ফাইল ডাউনলোড হবে।`,'একত্র করুন'))return;
+ download(`stock-backup-before-merge-${today()}.json`,JSON.stringify(DB,null,1),'application/json');
+ const gone=new Map();
+ g.forEach(a=>{const m=a[0];a.slice(1).forEach(p=>{m.log=[...plog(m),...plog(p)];m.qty+=p.qty;if((p.date||'')>(m.date||''))m.date=p.date;gone.set(p.id,m.id)})});
+ DB.usage.forEach(u=>{if(gone.has(u.productId))u.productId=gone.get(u.productId)});
+ DB.products=DB.products.filter(p=>!gone.has(p.id));save();renderAll();toast(`${gone.size}টি ডুপ্লিকেট একত্র হয়েছে`)}
+function prodPdf(id){const p=pOf(id);if(!p)return;const us=DB.usage.filter(u=>u.productId===id).sort((a,b)=>a.date.localeCompare(b.date)),s=stockOf(id);
+ const info=tbl(['প্রোডাক্ট','সাপ্লায়ার কোম্পানি','সর্বশেষ আনা','মোট আনা','ব্যবহৃত','বর্তমান স্টক'],[[`<b>${esc(p.name)}</b>`,esc(supsOf(p).join(', ')||'-'),esc(p.date||'-'),p.qty,usedOf(id),`<b>${s}</b>`]]);
+ const pl=plog(p).sort(logCmp),log=(pl.length>1)?`<h3 style="margin-top:16px">আনার হিসাব</h3>`+tbl(['তারিখ','কোম্পানি','পরিমাণ (পিস)'],pl.map(x=>[esc(x.d||'তারিখ অজানা'),esc(x.s||'-'),x.q])):'';
+ const use=us.length?`<h3 style="margin-top:16px">ব্যবহারের তালিকা</h3>`+tbl(['তারিখ','কাস্টমার','ঠিকানা','পরিমাণ','নোট'],us.map(u=>[esc(u.date),esc(cn(u.customerId)),esc(cOf(u.customerId)?.address||'-'),u.qty,esc(u.note||'-')]))+`<p><b>মোট ব্যবহৃত: ${usedOf(id)} পিস (${us.length}টি এন্ট্রি)</b></p>`:'<p style="margin-top:14px">এই প্রোডাক্টের কোনো ব্যবহার নেই।</p>';
+ printDoc('প্রোডাক্ট রিপোর্ট — '+esc(p.name),info+log+use,'product-'+p.name.replace(/[^\w\u0980-\u09FF-]+/g,'_'))}
+function prodListPdf(ids){const l=DB.products.filter(p=>ids.includes(p.id)).sort((a,b)=>a.name.localeCompare(b.name,'bn'));if(!l.length)return toast('আগে প্রোডাক্ট সিলেক্ট করুন',1);
+ printDoc('প্রোডাক্ট তালিকা ('+l.length+'টি)',tbl(['#','নাম','সাপ্লায়ার','তারিখ','মোট','ব্যবহৃত','স্টক'],l.map((p,k)=>[k+1,esc(p.name),esc(supsOf(p).join(', ')||'-'),esc(p.date||'-'),p.qty,usedOf(p.id),stockOf(p.id)]))+`<p><b>মোট স্টক: ${l.reduce((a,p)=>a+stockOf(p.id),0)} পিস</b></p>`,'products-selected')}
+$('pMerge').onclick=mergeDups;$('dupBtn').onclick=mergeDups;
+$('pPdf').onclick=()=>{const l=pList();if(!l.length)return toast('কোনো প্রোডাক্ট নেই',1);
+ printDoc('প্রোডাক্ট তালিকা',tbl(['নাম','সাপ্লায়ার','তারিখ','মোট','ব্যবহৃত','স্টক'],l.map(p=>[esc(p.name),esc(supsOf(p).join(', ')||'-'),esc(p.date||'-'),p.qty,usedOf(p.id),stockOf(p.id)])),'products')};
+
+// ---------- Usage ----------
+const uOpts=()=>'<option value="">— প্রোডাক্ট বেছে নিন —</option>'+optP();
+const uRowHtml='<tr><td></td><td><select class="up" style="display:none" tabindex="-1"></select><input class="us" placeholder="প্রোডাক্টের নাম লিখুন বা বেছে নিন" autocomplete="off"></td><td><input class="uq" type="number" min="1" inputmode="numeric" placeholder="0"></td><td><input class="un" placeholder="ঐচ্ছিক" autocomplete="off"></td><td class="n"><button type="button" class="btn d" data-rm title="সারি মুছুন">✕</button></td></tr>';
+const numURows=()=>[...$('uRows').rows].forEach((r,k)=>r.cells[0].textContent=k+1);
+function addURow(focus){$('uRows').insertAdjacentHTML('beforeend',uRowHtml);const tr=$('uRows').lastElementChild;tr.querySelector('.up').innerHTML=uOpts();numURows();if(focus)tr.querySelector('.us').focus()}
+function resetURows(){$('uRows').innerHTML='';addURow()}
+$('uAddRow').onclick=()=>addURow(true);
+$('uRows').addEventListener('click',e=>{const b=e.target.closest('[data-rm]');if(!b)return;const tr=b.closest('tr');
+ if($('uRows').rows.length>1){tr.remove();numURows()}else{tr.querySelector('.up').value='';tr.querySelectorAll('input').forEach(i=>i.value='')}});
+$('uRows').addEventListener('keydown',e=>{if(e.key!=='Enter'||e.target.tagName==='SELECT'||e.target.tagName!=='INPUT')return;e.preventDefault();
+ const all=[...$('uRows').querySelectorAll('.us,.uq,.un')],k=all.indexOf(e.target);
+ if(k<all.length-1)all[k+1].focus();else addURow(true)});
+$('uForm').addEventListener('submit',e=>{e.preventDefault();
+ const cust=$('uCust').value,date=$('uDate').value;
+ if(!cust)return toast('কাস্টমার নির্বাচন করুন',1);if(!date)return toast('তারিখ দিন',1);
+ const items=[],tot={},bid=uid();
+ [...$('uRows').rows].forEach(r=>{const up=r.querySelector('.up'),us=r.querySelector('.us').value;if(!up.value&&us.trim()){const m=DB.products.filter(p=>nkey(p.name)===nkey(us));if(m.length===1)up.value=m[0].id}});
+ for(const [k,r] of [...$('uRows').rows].entries()){const pid=r.querySelector('.up').value,q=r.querySelector('.uq').value.trim(),note=r.querySelector('.un').value.trim();
+  if(!pid&&!q&&!note&&!r.querySelector('.us').value.trim())continue;
+  if(!pid||!q)return toast(`সারি ${k+1}: প্রোডাক্ট ও পরিমাণ দুটোই দিন`,1);
+  const n=parseInt(q);if(!n||n<=0)return toast(`সারি ${k+1}: সঠিক পরিমাণ দিন`,1);
+  tot[pid]=(tot[pid]||0)+n;items.push({id:uid(),batch:bid,customerId:cust,productId:pid,date,qty:n,note})}
+ if(!items.length)return toast('অন্তত একটি প্রোডাক্ট বেছে নিন',1);
+ for(const pid in tot)if(tot[pid]>stockOf(pid)){const rc=items.filter(x=>x.productId===pid).length;return toast(rc>1?`${pn(pid)}: ${rc}টি সারিতে মোট ${tot[pid]} পিস দিয়েছেন, কিন্তু স্টকে মাত্র ${stockOf(pid)} পিস আছে। একই প্রোডাক্ট দুবার দিয়েছেন কিনা দেখুন`:`${pn(pid)}: স্টকে মাত্র ${stockOf(pid)} পিস আছে`,1)}
+ DB.usage.push(...items);save();resetURows();renderAll();toast(`${items.length}টি ব্যবহার যোগ হয়েছে (${sum(items)} পিস)`)});
+function renderUsage(){let l=[...DB.usage].sort(byDate);const a=$('uF1').value,b=$('uF2').value,c=$('uFC').value,p=$('uFP').value;
+ if(a)l=l.filter(x=>x.date>=a);if(b)l=l.filter(x=>x.date<=b);if(c)l=l.filter(x=>x.customerId===c);if(p)l=l.filter(x=>x.productId===p);
+ $('uBody').innerHTML=l.length?l.map(x=>`<tr><td>${x.date}</td><td>${esc(cn(x.customerId))}<br><span class="sub">${esc(cOf(x.customerId)?.address||'')}</span></td><td>${esc(pn(x.productId))}</td><td class="n"><span class="tag out">−${x.qty}</span></td><td class="w">${esc(x.note)||'–'}</td>
+  <td class="n"><button class="btn s sm" data-act="uEdit" data-id="${x.id}">এডিট</button> <button class="btn d" data-act="uDel" data-id="${x.id}">মুছুন</button></td></tr>`).join(''):empty(6,'কোনো ব্যবহার এন্ট্রি নেই')}
+['uF1','uF2','uFC','uFP'].forEach(i=>$(i).onchange=renderUsage);
+$('uRst').onclick=()=>{$('uF1').value=$('uF2').value=$('uFC').value=$('uFP').value='';renderUsage()};
+
+// ---------- Customers ----------
+let cv=null;const selC=new Set();
+$('cForm').addEventListener('submit',e=>{e.preventDefault();if(addCust({name:$('cName').value.trim(),address:$('cAddr').value.trim()}))e.target.reset()});
+$('cSearch').oninput=renderCustomers;
+const custUse=id=>{const l=DB.usage.filter(u=>u.customerId===id).sort(byDate),m={};l.forEach(u=>m[u.productId]=(m[u.productId]||0)+u.qty);return{l,m}};
+function renderCustomers(){if(cv&&!cOf(cv))cv=null;$('cList').style.display=cv?'none':'';$('cView').style.display=cv?'':'none';
+ if(cv){const c=cOf(cv),{l,m}=custUse(cv);[...selC].forEach(k=>{if(!l.some(x=>x.id===k))selC.delete(k)});
+  $('cView').innerHTML=`<div class="card"><div class="hd"><button class="btn s" data-act="cBack">← ফিরে যান</button><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn p" data-act="cUse" data-id="${cv}">+ ব্যবহার যোগ</button><button class="btn s" data-act="cPdf" data-id="${cv}">সব PDF</button><button class="btn s" data-act="editC" data-id="${cv}">এডিট</button><button class="btn d" data-act="delC" data-id="${cv}">মুছুন</button></div></div>
+  <h3 style="margin:0">${esc(c.name)}</h3><div class="sub">${esc(c.address)}</div><div class="sum">মোট ব্যবহার: <b>${sum(l)} পিস</b> &nbsp;|&nbsp; এন্ট্রি: <b>${l.length}</b></div></div>
+  <div class="card"><h3>প্রোডাক্ট অনুযায়ী</h3><div class="tw"><table><thead><tr><th>প্রোডাক্ট</th><th class="n">পরিমাণ</th></tr></thead><tbody>${Object.keys(m).length?Object.entries(m).map(([k,q])=>`<tr><td>${esc(pn(k))}</td><td class="n"><span class="tag out">${q} পিস</span></td></tr>`).join(''):empty(2,'এখনো কোনো ব্যবহার নেই')}</tbody></table></div></div>
+  <div class="card"><div class="hd"><h3 style="margin:0">ব্যবহারের হিস্ট্রি</h3><button class="btn p sm" data-act="cPdfSel" ${selC.size?'':'disabled'}>নির্বাচিত PDF (${selC.size})</button></div><div class="tw"><table><thead><tr><th class="ck"><input type="checkbox" data-selall="c" ${l.length&&l.every(x=>selC.has(x.id))?'checked':''} aria-label="সব নির্বাচন করুন"></th><th>তারিখ</th><th>প্রোডাক্ট</th><th class="n">পরিমাণ</th><th>নোট</th><th></th></tr></thead><tbody>${l.length?(()=>{const bk=x=>x.batch||('d'+(x.date||''));const gs=[];l.forEach(x=>{let g=gs.find(y=>y.k===bk(x));if(!g){g={k:bk(x),a:[]};gs.push(g)}g.a.push(x)});return gs.map(g=>`<tr style="background:#eef6f6"><td colspan="6"><b>📦 ${esc(g.a[0].date||'–')}</b> — ${g.a.length}টি এন্ট্রি, মোট ${sum(g.a)} পিস <button class="btn p sm" style="float:right" data-act="cPdfB" data-id="${esc(g.k)}">এই এন্ট্রির PDF</button></td></tr>`+g.a.map(x=>`<tr><td class="ck"><input type="checkbox" data-sel="c" data-id="${x.id}" ${selC.has(x.id)?'checked':''} aria-label="নির্বাচন করুন"></td><td>${x.date}</td><td>${esc(pn(x.productId))}</td><td class="n"><span class="tag out">${x.qty}</span></td><td class="w">${esc(x.note)||'–'}</td><td class="n"><button class="btn s sm" data-act="cPdf1" data-id="${x.id}">PDF</button> <button class="btn s sm" data-act="uEdit" data-id="${x.id}">এডিট</button> <button class="btn d" data-act="uDel" data-id="${x.id}">মুছুন</button></td></tr>`).join('')).join('')})():empty(6,'কোনো এন্ট্রি নেই')}</tbody></table></div></div>`;return}
+ const q=$('cSearch').value.trim().toLowerCase(),list=DB.customers.filter(c=>!q||(c.name+' '+c.address).toLowerCase().includes(q));
+ $('cBody').innerHTML=list.length?list.map(c=>`<tr><td><b>${esc(c.name)}</b></td><td class="w">${esc(c.address)}</td><td class="n"><span class="tag out">${sum(DB.usage.filter(u=>u.customerId===c.id))}</span></td>
+  <td class="n"><button class="btn s sm" data-act="openC" data-id="${c.id}">খুলুন</button> <button class="btn s sm" data-act="editC" data-id="${c.id}">এডিট</button> <button class="btn d" data-act="delC" data-id="${c.id}">মুছুন</button></td></tr>`).join(''):empty(4,DB.customers.length?'কোনো মিল পাওয়া যায়নি':'কোনো কাস্টমার নেই')}
+function custPdf(id,ids){const c=cOf(id);let{l}=custUse(id);const n=l.length;if(ids)l=l.filter(x=>ids.includes(x.id));
+ if(!l.length)return toast('কোনো এন্ট্রি নির্বাচন করা হয়নি',1);
+ const m={};l.forEach(u=>m[u.productId]=(m[u.productId]||0)+u.qty);const ds=[...new Set(l.map(x=>x.date||''))],dt=ds.length===1?ds[0]:'';
+ printDoc('কাস্টমার রিপোর্ট',`<p><b>নাম:</b> ${esc(c.name)}</p><p><b>ঠিকানা:</b> ${esc(c.address)}</p>${ids?`<p><b>নির্বাচিত এন্ট্রি:</b> ${l.length}টি (মোট ${n}টির মধ্যে)</p>`:''}<p><b>মোট ব্যবহার:</b> ${sum(l)} পিস</p>`+(!ids&&Object.keys(m).length<l.length?'<h3>প্রোডাক্ট অনুযায়ী</h3>'+tbl(['প্রোডাক্ট','পরিমাণ'],Object.entries(m).map(([k,q])=>[esc(pn(k)),q+' পিস']))+'<h3>বিস্তারিত</h3>':'<h3>বিস্তারিত</h3>')+(dt?tbl(['প্রোডাক্ট','পরিমাণ','নোট'],[...l].reverse().map(x=>[esc(pn(x.productId)),x.qty,esc(x.note||'-')])):tbl(['তারিখ','প্রোডাক্ট','পরিমাণ','নোট'],[...l].reverse().map(x=>[x.date,esc(pn(x.productId)),x.qty,esc(x.note||'-')])))+`<p><b>সর্বমোট: ${sum(l)} পিস</b></p>`,'customer-'+c.name+(ids&&l.length===1?'-'+l[0].date:''),dt)}
+
+// ---------- Settings ----------
+let sv=null;const selS=new Set();
+const sProds=n=>DB.products.filter(p=>plog(p).some(x=>x.s===n));
+const sStat=n=>{const l=sProds(n);let tot=0,stk=0;l.forEach(p=>{const X=sx(p,n);tot+=X.q;stk+=X.left});return{l,tot,stk}};
+const SPH=['নাম','তারিখ','মোট আনা'];
+const spRow=p=>[esc(p.name),esc(p.date||'-'),p.qty];
+const spLog=(p,n)=>sx(p,n).es.sort(logCmp);
+const spGrp=(l,n)=>`<table><thead><tr><th>নাম</th><th>তারিখ</th><th class="n">পরিমাণ</th><th class="n">মোট আনা</th></tr></thead><tbody>${l.map(p=>{const g=spLog(p,n),r=g.length;return g.map((x,i)=>`<tr style="page-break-inside:avoid">${i?'':`<td rowspan="${r}"><b>${esc(p.name)}</b></td>`}<td>${esc(x.d||'তারিখ অজানা')}</td><td>${x.q}</td>${i?'':`<td rowspan="${r}"><b>${sx(p,n).q}</b></td>`}</tr>`).join('')}).join('')}</tbody></table>`;
+function syncSup(){DB.products.forEach(p=>(p.log||[]).forEach(x=>{if(!x.s)return;const m=DB.suppliers.find(y=>y.toLowerCase()===x.s.toLowerCase());if(m)x.s=m;else DB.suppliers.push(x.s)}));
+ DB.products.forEach(p=>{if(!p.supplier)return;const m=DB.suppliers.find(x=>x.toLowerCase()===p.supplier.toLowerCase());if(m)p.supplier=m;else DB.suppliers.push(p.supplier)});
+ if(!store.get('gp_sup_mig',0)){if(!DB.suppliers.some(x=>x.toLowerCase()==='asha design maker'))DB.suppliers.unshift('ASHA DESIGN MAKER');store.set('gp_sup_mig',1)}}
+$('sForm').addEventListener('submit',e=>{e.preventDefault();const v=$('sName').value.trim();if(!v)return;
+ if(DB.suppliers.some(x=>x.toLowerCase()===v.toLowerCase()))return toast('এটি ইতিমধ্যে তালিকায় আছে',1);DB.suppliers.push(v);save();e.target.reset();renderAll();toast('সাপ্লাই কোম্পানি যোগ হয়েছে')});
+$('sSearch').oninput=renderSuppliers;
+function renderSuppliers(){if(sv&&!DB.suppliers.includes(sv))sv=null;$('sList').style.display=sv?'none':'';$('sView').style.display=sv?'':'none';
+ if(sv){const{l,tot,stk}=sStat(sv),e=esc(sv);[...selS].forEach(k=>{if(!l.some(p=>p.id===k))selS.delete(k)});
+  $('sView').innerHTML=`<div class="card"><div class="hd"><button class="btn s" data-act="sBack">← ফিরে যান</button><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn p" data-act="sAddP" data-id="${e}">+ প্রোডাক্ট যোগ</button><button class="btn s" data-act="sPdf" data-id="${e}">সব PDF</button><button class="btn s" data-act="editS" data-id="${e}">এডিট</button><button class="btn d" data-act="delS" data-id="${e}">মুছুন</button></div></div>
+  <h3 style="margin:0">${e}</h3><div class="sum">মোট প্রোডাক্ট: <b>${l.length}টি</b> &nbsp;|&nbsp; মোট আনা: <b>${tot} পিস</b> &nbsp;|&nbsp; বর্তমান স্টক: <b>${stk} পিস</b></div></div>
+  <div class="card"><div class="hd"><h3 style="margin:0">এই কোম্পানি থেকে আনা প্রোডাক্ট</h3><button class="btn p sm" data-act="sPdfSel" ${selS.size?'':'disabled'}>নির্বাচিত PDF (${selS.size})</button></div><div class="tw"><table><thead><tr><th class="ck"><input type="checkbox" data-selall="s" ${l.length&&l.every(p=>selS.has(p.id))?'checked':''} aria-label="সব নির্বাচন করুন"></th><th>নাম</th><th>তারিখ</th><th class="n">মোট আনা</th><th class="n">ব্যবহৃত</th><th class="n">স্টক</th><th></th></tr></thead><tbody>${l.length?(()=>{const bk=p=>skey(p,sv);const gs=[];l.forEach(p=>{let g=gs.find(x=>x.k===bk(p));if(!g){g={k:bk(p),a:[]};gs.push(g)}g.a.push(p)});return gs.map(g=>`<tr style="background:#eef6f6"><td colspan="7"><b>📦 ${esc(sx(g.a[0],sv).last||'–')}</b> — ${g.a.length}টি প্রোডাক্ট, মোট ${g.a.reduce((a,p)=>a+sx(p,sv).q,0)} পিস <button class="btn p sm" style="float:right" data-act="sPdfB" data-id="${esc(g.k)}">এই এন্ট্রির PDF</button></td></tr>`+g.a.map(p=>{const X=sx(p,sv),s=X.left;return`<tr><td class="ck"><input type="checkbox" data-sel="s" data-id="${p.id}" ${selS.has(p.id)?'checked':''} aria-label="নির্বাচন করুন"></td><td><b>${esc(p.name)}</b></td><td>${esc(X.last||'–')}</td><td class="n">${X.q}</td><td class="n">${X.q-X.left}</td><td class="n"><span class="tag ${s<=LOW?'out':'in'}">${s}</span></td><td class="n"><button class="btn s sm" data-act="sPdf1" data-id="${p.id}">PDF</button> <button class="btn s sm" data-act="editP" data-id="${p.id}">এডিট</button> <button class="btn d" data-act="delP" data-id="${p.id}">মুছুন</button></td></tr>`}).join('')).join('')})():empty(7,'এই কোম্পানি থেকে এখনো কোনো প্রোডাক্ট আনা হয়নি')}</tbody></table></div></div>`;return}
+ const q=$('sSearch').value.trim().toLowerCase(),list=DB.suppliers.filter(n=>!q||n.toLowerCase().includes(q));
+ $('sBody').innerHTML=list.length?list.map(n=>{const t=sStat(n),e=esc(n);return`<tr><td class="w"><b>${e}</b><div style="display:flex;gap:6px;margin-top:6px"><button class="btn s sm" data-act="openS" data-id="${e}">খুলুন</button><button class="btn s sm" data-act="editS" data-id="${e}">এডিট</button><button class="btn d" data-act="delS" data-id="${e}">মুছুন</button></div></td><td class="n">${t.l.length}</td><td class="n">${t.tot}</td><td class="n"><span class="tag ${t.stk>0?'in':'out'}">${t.stk}</span></td></tr>`}).join(''):empty(4,DB.suppliers.length?'কোনো মিল পাওয়া যায়নি':'কোনো সাপ্লাই কোম্পানি নেই — উপরের ফর্ম থেকে যোগ করুন')}
+function suppPdf(n,ids){const all=sProds(n);let l=all;if(ids)l=all.filter(p=>ids.includes(p.id));
+ if(!l.length&&ids)return toast('কোনো প্রোডাক্ট নির্বাচন করা হয়নি',1);
+ const tot=l.reduce((a,p)=>a+sx(p,n).q,0);const ds=[...new Set(l.flatMap(p=>sx(p,n).es.map(x=>x.d||'')))],dt=ds.length===1?ds[0]:'';
+ printDoc('সাপ্লাই রিপোর্ট',`<p><b>কোম্পানি:</b> ${esc(n)}</p>${ids?`<p><b>নির্বাচিত প্রোডাক্ট:</b> ${l.length}টি (মোট ${all.length}টির মধ্যে)</p>`:''}<p><b>মোট প্রোডাক্ট:</b> ${l.length}টি &nbsp; <b>মোট আনা:</b> ${tot} পিস</p><h3>প্রোডাক্ট তালিকা</h3>`+(l.length?spGrp(l,n):'<p>কোনো প্রোডাক্ট নেই</p>')+(l.length?`<p><b>সর্বমোট: ${tot} পিস</b></p>`:''),'supplier-'+n+(ids&&l.length===1?'-'+l[0].name:''),dt)}
+$('sPdfAll').onclick=()=>{if(!DB.suppliers.length)return toast('কোনো কোম্পানি নেই',1);
+ const rows=DB.suppliers.map((n,k)=>{const t=sStat(n);return[k+1,esc(n),t.l.length,t.tot]});
+ printDoc('সাপ্লাই কোম্পানি তালিকা',tbl(['#','কোম্পানি','প্রোডাক্ট','মোট আনা'],rows)+DB.suppliers.map(n=>{const{l}=sStat(n);return`<h3>${esc(n)}</h3>`+(l.length?spGrp(l,n):'<p>কোনো প্রোডাক্ট নেই</p>')}).join(''),'suppliers')};
+function download(name,text,type){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type}));a.download=name;document.body.appendChild(a);a.click();a.remove()}
+const bkInfo=()=>{const d=store.get('gp_last_bk','');$('bkInfo').innerHTML=d?`শেষ ব্যাকআপ: <b>${esc(d)}</b>`:'<span style="color:var(--warn)">এখনো কোনো ব্যাকআপ নেওয়া হয়নি</span>'};
+$('bkBtn').onclick=()=>{download(`stock-backup-${today()}.json`,JSON.stringify(DB,null,1),'application/json');store.set('gp_last_bk',today());bkInfo();toast('ব্যাকআপ ডাউনলোড হয়েছে')};
+$('rsBtn').onclick=()=>$('rsFile').click();
+$('rsFile').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;
+ try{const d=JSON.parse(await f.text());if(!Array.isArray(d.products)||!Array.isArray(d.usage))throw 0;
+  if(!await dialog({title:'ব্যাকআপ ফেরত দেবেন?',msg:'বর্তমান সব ডেটা ব্যাকআপের ডেটা দিয়ে বদলে যাবে।',yes:'ফেরত দিন'}))return;
+  DB.products=d.products;DB.usage=d.usage;DB.customers=Array.isArray(d.customers)?d.customers:[];DB.bin=Array.isArray(d.bin)?d.bin:[];
+  if(Array.isArray(d.suppliers))DB.suppliers=d.suppliers;if(d.company)DB.company=String(d.company);
+  fix(d.stockIn);syncSup();save();applyCo();renderAll();toast('ব্যাকআপ ফেরত দেওয়া হয়েছে')}catch(x){toast('ফাইলটি সঠিক ব্যাকআপ নয়',1)}};
+
+// ---------- Auto backup to Gmail (Google Apps Script) ----------
+let abTimer,abBusy=false,abReady=false;
+const abUrl=()=>String(store.get('gp_ab_url','')).trim(),abOn=()=>store.get('gp_ab_on',false)===true;
+function abInfo(){const t=Number(store.get('gp_ab_last',0));$('abInfo').innerHTML=t?`শেষ Gmail ব্যাকআপ: <b>${esc(new Date(t).toLocaleString('bn-BD'))}</b>`:'<span style="color:var(--warn)">এখনো Gmail-এ পাঠানো হয়নি</span>'}
+async function abSend(manual){
+ const url=abUrl();if(!/^https:\/\/script\.google\.com\//.test(url)){if(manual)toast('আগে সঠিক Apps Script লিংক দিন',1);return}
+ if(abBusy)return;abBusy=true;
+ try{await fetch(url,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({date:today(),company:DB.company,data:DB})});
+  store.set('gp_ab_last',Date.now());store.set('gp_ab_day',today());store.set('gp_ab_dirty',false);abInfo();if(manual)toast('Gmail-এ পাঠানো হয়েছে — ইনবক্স চেক করুন')}
+ catch(e){if(manual)toast('পাঠানো যায়নি — ইন্টারনেট চেক করুন',1)}
+ abBusy=false}
+function abMark(){if(!abReady||!abOn()||!abUrl())return;store.set('gp_ab_dirty',true);clearTimeout(abTimer);
+ const wait=Math.max(120e3,36e5-(Date.now()-Number(store.get('gp_ab_last',0))));abTimer=setTimeout(()=>abSend(),wait)}
+$('abOn').checked=abOn();$('abUrl').value=abUrl();
+$('abOn').onchange=e=>{store.set('gp_ab_on',e.target.checked);toast(e.target.checked?'অটো ব্যাকআপ চালু':'অটো ব্যাকআপ বন্ধ')};
+$('abUrl').onchange=e=>store.set('gp_ab_url',e.target.value.trim());
+$('abNow').onclick=()=>{store.set('gp_ab_url',$('abUrl').value.trim());abSend(true)};
+$('abCopy').onclick=async()=>{try{await navigator.clipboard.writeText($('abCode').value);toast('কোড কপি হয়েছে')}catch(e){$('abCode').select();toast('কোড সিলেক্ট হয়েছে, কপি করুন',1)}};
+
+// ---------- Password (edit / delete protection) ----------
+const hashPw=s=>{let h1=0xdeadbeef,h2=0x41c6ce57;for(let i=0;i<s.length;i++){const c=s.charCodeAt(i);h1=Math.imul(h1^c,2654435761);h2=Math.imul(h2^c,1597334677)}h1=Math.imul(h1^(h1>>>16),2246822507)^Math.imul(h2^(h2>>>13),3266489909);h2=Math.imul(h2^(h2>>>16),2246822507)^Math.imul(h1^(h1>>>13),3266489909);return String(4294967296*(2097151&h2)+(h1>>>0))};
+const passOk=v=>hashPw(v)===String(store.get('gp_pass',hashPw('1234')));
+async function askPass(title,msg){const i=$('dI');i.type='password';i.setAttribute('autocomplete','off');const v=await dialog({title,msg,input:'',yes:'নিশ্চিত করুন'});i.type='text';return v}
+async function needPass(){const v=await askPass('পাসওয়ার্ড দিন','এডিট বা মুছতে পাসওয়ার্ড লাগবে');if(v===null)return false;if(!passOk(v)){toast('ভুল পাসওয়ার্ড',1);return false}return true}
+const PROT=new Set(['editP','delP','editC','delC','uEdit','uDel','editS','delS','purgeB']);
+$('pwBtn').onclick=async()=>{const o=await askPass('বর্তমান পাসওয়ার্ড');if(o===null)return;if(!passOk(o))return toast('ভুল পাসওয়ার্ড',1);
+ const n=await askPass('নতুন পাসওয়ার্ড','কমপক্ষে ৪ অক্ষর');if(n===null)return;if(n.length<4)return toast('কমপক্ষে ৪ অক্ষর দিন',1);
+ const c=await askPass('নতুন পাসওয়ার্ড আবার দিন');if(c===null)return;if(c!==n)return toast('দুটো পাসওয়ার্ড মেলেনি',1);
+ store.set('gp_pass',hashPw(n));toast('পাসওয়ার্ড পরিবর্তন হয়েছে')};
+// ---------- Actions (edit / delete / restore) ----------
+document.addEventListener('click',async e=>{const b=e.target.closest('[data-act]');if(!b)return;const{act,id,i}=b.dataset;
+ if(PROT.has(act)&&!await needPass())return;
+ if(act==='openC'){cv=id;selC.clear();scrollTo(0,0)}
+ else if(act==='cBack')cv=null;
+ else if(act==='cPdf')return custPdf(id);
+ else if(act==='cPdf1')return custPdf(cv,[id]);
+ else if(act==='cPdfB')return custPdf(cv,custUse(cv).l.filter(x=>(x.batch||('d'+(x.date||'')))===id).map(x=>x.id));
+ else if(act==='cPdfSel')return custPdf(cv,[...selC]);
+ else if(act==='cUse'){go('usage');renderAll();$('uCust').value=id;return}
+ else if(act==='pTog'){const r=b.closest('.pr');r.classList.toggle('open');r.classList.contains('open')?openP.add(id):openP.delete(id);return}
+ else if(act==='pdfP')return prodPdf(id);
+ else if(act==='pPdfSel')return prodListPdf([...selP]);
+ else if(act==='editP'){const p=pOf(id),fmt=x=>`${x.d||'তারিখ দিন'} = ${x.q} = ${x.s||p.supplier||''}`,lt0=plog(p).sort(logCmp).map(fmt).join('\n'),o=await formDlg('প্রোডাক্ট এডিট',PF().concat([{k:'logt',l:'আনার হিসাব (প্রতি লাইনে একটি: তারিখ = পরিমাণ = কোম্পানি)',t:'textarea'}]),{...p,logt:lt0});if(!o)return;const er=prodErr(o,id);if(er)return toast(er,1);
+  const lt=o.logt;delete o.logt;let nl;
+  if(lt.trim()!==lt0.trim()){nl=[];for(const ln of lt.split('\n').map(x=>x.trim()).filter(Boolean)){const pt=ln.split('=').map(x=>x.trim());if(!/^\d{4}-\d{2}-\d{2}$/.test(pt[0]||'')||!/^\d+$/.test(pt[1]||''))return toast(`লাইন ঠিক নেই: "${ln}" — এভাবে লিখুন: 2026-11-17 = 5 = কোম্পানির নাম`,1);
+    let sp=o.supplier;if(pt[2]){sp=DB.suppliers.find(x=>x.toLowerCase()===pt[2].toLowerCase());if(!sp)return toast(`কোম্পানি "${pt[2]}" তালিকায় নেই`,1)}
+    nl.push({d:pt[0],q:parseInt(pt[1]),s:sp})}
+   const t=nl.reduce((a,x)=>a+x.q,0);if(t!==o.qty)return toast(`আনার হিসাবের যোগফল ${t}, কিন্তু মোট পরিমাণ ${o.qty} — মিলিয়ে নিন`,1)}
+  else{nl=plog(p).map(x=>({...x}));if(supsOf(p).length<2&&o.supplier!==p.supplier)nl.forEach(x=>x.s=o.supplier);const t=nl.reduce((a,x)=>a+x.q,0);
+   if(o.date&&o.date!==p.date){const dated=nl.filter(x=>x.d).sort(logCmp);if(dated.length)dated[dated.length-1].d=o.date}
+   if(t<o.qty)nl.push({d:o.date||p.date||'',q:o.qty-t,s:o.supplier});
+   else if(t>o.qty)return toast(`আনার হিসাবের যোগফল ${t}, মোট পরিমাণ ${o.qty} এর চেয়ে বেশি — আনার হিসাব এডিট করুন`,1)}
+  Object.assign(p,o);p.log=nl;const ds=nl.map(x=>x.d).filter(Boolean).sort();if(ds.length)p.date=ds[ds.length-1];toast('প্রোডাক্ট আপডেট হয়েছে')}
+ else if(act==='delP'){const p=pOf(id),rel=DB.usage.filter(u=>u.productId===id);
+  if(!await ask('প্রোডাক্ট বিনে পাঠাবেন?',`“${p.name}”${rel.length?` ও এর ${rel.length}টি ব্যবহার এন্ট্রি`:''} রিসাইকেল বিনে যাবে। পরে ফেরত আনা যাবে।`,'বিনে পাঠান'))return;
+  toBin('product',p,rel,`${p.name}${rel.length?` — ${rel.length}টি ব্যবহার এন্ট্রি সহ`:''}`);DB.products=DB.products.filter(x=>x.id!==id);DB.usage=DB.usage.filter(x=>x.productId!==id);toast('বিনে পাঠানো হয়েছে')}
+ else if(act==='editC'){const c=cOf(id),o=await formDlg('কাস্টমার এডিট',CF,c);if(!o)return;if(!o.name||!o.address)return toast('নাম ও ঠিকানা দিন',1);Object.assign(c,o);toast('কাস্টমার আপডেট হয়েছে')}
+ else if(act==='delC'){const c=cOf(id),rel=DB.usage.filter(u=>u.customerId===id);
+  if(!await ask('কাস্টমার বিনে পাঠাবেন?',`“${c.name}”${rel.length?` ও এর ${rel.length}টি ব্যবহার এন্ট্রি (${sum(rel)} পিস)`:''} রিসাইকেল বিনে যাবে। পরে ফেরত আনা যাবে।`,'বিনে পাঠান'))return;
+  toBin('customer',c,rel,`${c.name} — ${c.address}${rel.length?` (${rel.length}টি ব্যবহার এন্ট্রি সহ)`:''}`);DB.customers=DB.customers.filter(x=>x.id!==id);DB.usage=DB.usage.filter(x=>x.customerId!==id);cv=null;toast('বিনে পাঠানো হয়েছে')}
+ else if(act==='uEdit'){const u=DB.usage.find(x=>x.id===id),o=await formDlg('ব্যবহার এডিট',UF(),u);if(!o)return;const er=useErr(o,id);if(er)return toast(er,1);Object.assign(u,o);toast('এন্ট্রি আপডেট হয়েছে')}
+ else if(act==='uDel'){const u=DB.usage.find(x=>x.id===id);if(!await ask('ব্যবহার এন্ট্রি বিনে পাঠাবেন?','মুছলে ব্যবহৃত পণ্য স্টকে ফিরে আসবে। বিন থেকে ফেরত আনা যাবে।','বিনে পাঠান'))return;
+  toBin('usage',u,[],`${cn(u.customerId)} · ${pn(u.productId)} · ${u.qty} পিস · ${u.date}`);DB.usage=DB.usage.filter(x=>x.id!==id);toast('বিনে পাঠানো হয়েছে')}
+ else if(act==='rstB'){const k=DB.bin.find(x=>x.id===id);
+  if(k.type==='supplier'){const pr=k.prods||[];
+   if(DB.suppliers.some(x=>x.toLowerCase()===k.data.name.toLowerCase()))return toast('এই নামের কোম্পানি এখন আছে',1);
+   DB.suppliers.push(k.data.name);DB.products.push(...pr);DB.usage.push(...(k.use||[]));DB.bin=DB.bin.filter(x=>x.id!==id);toast('ফেরত আনা হয়েছে')}
+  else{
+  (k.type==='product'?DB.products:k.type==='customer'?DB.customers:DB.usage).push(k.data);DB.usage.push(...k.rel);DB.bin=DB.bin.filter(x=>x.id!==id);toast('ফেরত আনা হয়েছে')}}
+ else if(act==='purgeB'){if(!await ask('চিরতরে মুছবেন?','এটি আর ফেরত আনা যাবে না।','চিরতরে মুছুন'))return;DB.bin=DB.bin.filter(x=>x.id!==id);toast('চিরতরে মুছে গেছে')}
+ else if(act==='openS'){go('suppliers');sv=id;selS.clear()}
+ else if(act==='sBack')sv=null;
+ else if(act==='sPdf')return suppPdf(id);
+ else if(act==='sPdf1')return suppPdf(sv,[id]);
+ else if(act==='sPdfB')return suppPdf(sv,sProds(sv).filter(p=>skey(p,sv)===id).map(p=>p.id));
+ else if(act==='sPdfSel')return suppPdf(sv,[...selS]);
+ else if(act==='sAddP'){go('products');renderAll();$('pSup').value=id;return}
+ else if(act==='editS'){const v=await dialog({title:'কোম্পানির নাম এডিট',input:id,yes:'সেভ করুন'});if(v===null)return;if(!v)return toast('নাম খালি রাখা যাবে না',1);
+  if(DB.suppliers.some(x=>x!==id&&x.toLowerCase()===v.toLowerCase()))return toast('এই নামে কোম্পানি আছে',1);
+  DB.suppliers[DB.suppliers.indexOf(id)]=v;DB.products.forEach(p=>{if(p.supplier===id)p.supplier=v;(p.log||[]).forEach(x=>{if(x.s===id)x.s=v})});if(sv===id)sv=v;toast('কোম্পানি আপডেট হয়েছে')}
+ else if(act==='delS'){const sh=sProds(id).filter(p=>supsOf(p).length>1);if(sh.length)return toast(`“${sh[0].name}” অন্য কোম্পানি থেকেও আনা হয়েছে, তাই এই কোম্পানি মুছা যাবে না। আগে প্রোডাক্টের আনার হিসাব এডিট করুন`,1);const ps=sProds(id),ids=ps.map(p=>p.id),us=DB.usage.filter(u=>ids.includes(u.productId));
+  if(!await ask(`“${id}” বিনে পাঠাবেন?`,ps.length?`এই কোম্পানির ${ps.length}টি প্রোডাক্ট${us.length?` ও ${us.length}টি ব্যবহার এন্ট্রি`:''} সহ রিসাইকেল বিনে যাবে। পরে ফেরত আনা যাবে।`:'রিসাইকেল বিনে যাবে। পরে ফেরত আনা যাবে।','বিনে পাঠান'))return;
+  toBin('supplier',{name:id},[],`${id}${ps.length?` — ${ps.length}টি প্রোডাক্ট সহ`:''}`);DB.bin[0].prods=ps;DB.bin[0].use=us;
+  DB.suppliers=DB.suppliers.filter(x=>x!==id);DB.products=DB.products.filter(p=>!ids.includes(p.id));DB.usage=DB.usage.filter(u=>!ids.includes(u.productId));sv=null;toast('বিনে পাঠানো হয়েছে')}
+ save();renderAll()});
+document.addEventListener('change',e=>{const t=e.target,d=t.dataset||{};
+ if(d.psel){t.checked?selP.add(d.psel):selP.delete(d.psel);renderProducts()}
+ else if(d.pselall){pList().forEach(p=>t.checked?selP.add(p.id):selP.delete(p.id));renderProducts()}
+ else if(d.sel){const S=d.sel==='c'?selC:selS;t.checked?S.add(d.id):S.delete(d.id);renderCustomers();renderSuppliers()}
+ else if(d.selall){const S=d.selall==='c'?selC:selS,ids=d.selall==='c'?custUse(cv).l.map(x=>x.id):sProds(sv).map(p=>p.id);
+  ids.forEach(k=>t.checked?S.add(k):S.delete(k));renderCustomers();renderSuppliers()}});
+$('binClr').onclick=async()=>{if(!DB.bin.length)return;if(!await ask('বিন খালি করবেন?','সব আইটেম চিরতরে মুছে যাবে।','খালি করুন'))return;DB.bin=[];save();renderAll();toast('বিন খালি হয়েছে')};
+function renderBin(){$('binBody').innerHTML=DB.bin.length?DB.bin.map(k=>`<tr><td><span class="tag warn">${{product:'প্রোডাক্ট',customer:'কাস্টমার',usage:'ব্যবহার',supplier:'সাপ্লাই'}[k.type]}</span></td><td class="w">${esc(k.lbl)}</td><td>${k.at}</td>
+ <td class="n"><button class="btn s sm" data-act="rstB" data-id="${k.id}">ফেরত আনুন</button> <button class="btn d" data-act="purgeB" data-id="${k.id}">চিরতরে মুছুন</button></td></tr>`).join(''):empty(4,'রিসাইকেল বিন খালি')}
+
+// ---------- Dashboard ----------
+function renderDashboard(){const dg=dupGroups();$('dupBar').style.display=dg.length?'':'none';$('dupTxt').textContent=`${dg.length}টি প্রোডাক্টের নাম একাধিকবার আছে (${dg.reduce((a,x)=>a+x.length,0)}টি এন্ট্রি) — একত্র করলে একটাই থাকবে ও পরিমাণ যোগ হবে`;$('kP').textContent=DB.products.length;$('kC').textContent=DB.customers.length;$('kO').textContent=sum(DB.usage);$('kS').textContent=DB.products.reduce((a,p)=>a+stockOf(p.id),0);
+ $('dashDate').textContent=new Date().toLocaleDateString('bn-BD',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+ const low=DB.products.map(p=>({p,s:stockOf(p.id)})).filter(x=>x.s<=LOW);
+ $('lowList').innerHTML=low.length?low.map(x=>`<div class="row"><span>${esc(x.p.name)}</span><span class="tag ${x.s<=0?'out':'warn'}">${x.s} পিস</span></div>`).join(''):'<div class="empty">সব প্রোডাক্টের স্টক ঠিক আছে</div>';
+ const r=[...DB.usage].sort(byDate).slice(0,8);
+ $('recent').innerHTML=r.length?r.map(a=>`<div class="row"><span>${esc(pn(a.productId))}<br><span class="sub">${a.date} · ${esc(cn(a.customerId))}</span></span><span class="tag out">−${a.qty}</span></div>`).join(''):'<div class="empty">এখনো কোনো ব্যবহার নেই</div>'}
+
+// ---------- Reports ----------
+function repData(){let l=[...DB.usage].sort((x,y)=>x.date.localeCompare(y.date));const a=$('rF1').value,b=$('rF2').value,c=$('rC').value,p=$('rP').value;
+ if(a)l=l.filter(x=>x.date>=a);if(b)l=l.filter(x=>x.date<=b);if(c)l=l.filter(x=>x.customerId===c);if(p)l=l.filter(x=>x.productId===p);return l}
+const RH=['তারিখ','কাস্টমার','ঠিকানা','প্রোডাক্ট','পরিমাণ'];
+const repRows=l=>l.map(x=>[x.date,esc(cn(x.customerId)),esc(cOf(x.customerId)?.address||'-'),esc(pn(x.productId)),x.qty]);
+$('rGo').onclick=()=>{const l=repData();$('rHead').innerHTML=`<tr>${RH.map((h,k)=>`<th class="${k===4?'n':''}">${h}</th>`).join('')}</tr>`;
+ $('rBody').innerHTML=l.length?repRows(l).map(r=>`<tr>${r.map((c,k)=>`<td class="${k===4?'n':''}">${k===4?`<b>${c}</b>`:c}</td>`).join('')}</tr>`).join(''):empty(5,'এই ফিল্টারে কোনো তথ্য নেই');
+ $('rSum').innerHTML=`মোট এন্ট্রি: <b>${l.length}</b> &nbsp;|&nbsp; মোট পরিমাণ: <b>${sum(l)} পিস</b>`};
+$('rPdf').onclick=()=>{const l=repData();if(!l.length)return toast('রিপোর্টে কোনো তথ্য নেই',1);printDoc('ব্যবহার রিপোর্ট',tbl(RH,repRows(l))+`<p><b>মোট: ${sum(l)} পিস (${l.length}টি এন্ট্রি)</b></p>`,'usage-report')};
+$('rCsv').onclick=()=>{const l=repData();if(!l.length)return toast('রিপোর্টে কোনো তথ্য নেই',1);
+ const q=v=>`"${String(v??'').replace(/"/g,'""')}"`;
+ const csv=[RH.join(','),...l.map(x=>[x.date,cn(x.customerId),cOf(x.customerId)?.address||'-',pn(x.productId),x.qty].map(q).join(','))].join('\r\n');
+ download('usage_report.csv','\uFEFF'+csv,'text/csv;charset=utf-8');toast('CSV ডাউনলোড হয়েছে')};
+function renderSummaries(){const grp=(key,nm)=>{const m={};DB.usage.forEach(x=>{const k=x[key];m[k]=m[k]||{c:0,q:0};m[k].c++;m[k].q+=x.qty});return Object.entries(m).sort((a,b)=>b[1].q-a[1].q).map(([k,d])=>`<tr><td><b>${esc(nm(k))}</b></td><td class="n">${d.c}</td><td class="n"><span class="tag out">${d.q} পিস</span></td></tr>`).join('')||empty(3,'কোনো তথ্য নেই')};
+ $('sumC').innerHTML=grp('customerId',cn);$('sumP').innerHTML=grp('productId',pn)}
+
+// ---------- Init ----------
+function renderMasters(){
+ setOpts($('pSup'),optS()||'<option value="">(আগে সাপ্লাই ট্যাব থেকে কোম্পানি যোগ করুন)</option>');
+ document.querySelectorAll('#uRows .up').forEach(sel=>setOpts(sel,uOpts()));
+ setOpts($('uCust'),optC()||'<option value="">আগে কাস্টমার যোগ করুন</option>');
+ const fc='<option value="">সব কাস্টমার</option>'+DB.customers.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join(''),fp='<option value="">সব প্রোডাক্ট</option>'+DB.products.map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join('');
+ setOpts($('uFC'),fc);setOpts($('rC'),fc);setOpts($('uFP'),fp);setOpts($('rP'),fp);
+}
+function renderAll(){renderMasters();renderProducts();renderSuppliers();renderUsage();renderCustomers();renderDashboard();renderSummaries();renderBin()}
+fix(OLDIN);syncSup();save();$('uDate').value=today();$('pDate').value=today();applyCo();resetRows();resetURows();bkInfo();renderAll();
+if(!store.ok)$('memNote').style.display='block';
+abInfo();abReady=true;if(abOn()&&abUrl()&&(store.get('gp_ab_day','')!==today()||store.get('gp_ab_dirty',false)===true))setTimeout(()=>abSend(),4000);
+</script>
+</body>
+</html>
